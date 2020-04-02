@@ -363,6 +363,7 @@ def generic_train(model, args):
         checkpoint_callback=checkpoint_callback,
         logger=wandb_logger,
         callbacks=[LoggingCallback()],
+        val_check_interval=0.5
     )
 
     if args.fp16:
