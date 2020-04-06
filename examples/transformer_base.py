@@ -6,6 +6,7 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from transformers import (
     ALL_PRETRAINED_MODEL_ARCHIVE_MAP,
     AdamW,
@@ -22,6 +23,14 @@ from transformers import (
 from transformers.modeling_auto import MODEL_MAPPING
 
 logger = logging.getLogger(__name__)
+
+if os.environ.get("LIGHTNING_DEBUG"):
+    LEVEL = logging.DEBUG
+else:
+    LEVEL = logging.INFO
+
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+                    level=LEVEL)
 
 ALL_MODELS = tuple(ALL_PRETRAINED_MODEL_ARCHIVE_MAP)
 MODEL_CLASSES = tuple(m.model_type for m in MODEL_MAPPING)
@@ -347,23 +356,29 @@ def generic_train(model, args):
                 args.output_dir))
 
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        filepath=args.output_dir,
-        prefix="checkpoint",
+        filepath=os.path.join(args.output_dir,'{epoch}'),
         monitor="val_loss",
-        mode="min",
-        save_top_k=5)
+        mode="min", verbose=True,
+        save_top_k=2)
+    early_stop_callback = EarlyStopping(
+    monitor='val_loss',
+    min_delta=0.00,
+    patience=0,
+    verbose=True,
+    mode='min'
+    )
     # wandb logger
     wandb_logger = WandbLogger(project="bart-qa-to-nli")
     train_params = dict(
         accumulate_grad_batches=args.gradient_accumulation_steps,
         gpus=args.n_gpu,
         max_epochs=args.num_train_epochs,
-        early_stop_callback=False,
+        early_stop_callback=early_stop_callback,
         gradient_clip_val=args.max_grad_norm,
         checkpoint_callback=checkpoint_callback,
         logger=wandb_logger,
         callbacks=[LoggingCallback()],
-        val_check_interval=0.5
+        val_check_interval=0.25,
     )
 
     if args.fp16:

@@ -55,7 +55,7 @@ class BartSystem(BaseTransformer):
     def training_step(self, batch, batch_idx):
         loss = self._step(batch)
 
-        tensorboard_logs = {"train_loss": loss}
+        tensorboard_logs = {"train_loss": loss, "learning_rate": self.lr_scheduler.get_last_lr()[-1]}
 
         return {"loss": loss, "log": tensorboard_logs}
 
@@ -71,7 +71,6 @@ class BartSystem(BaseTransformer):
         return {"avg_val_loss": avg_loss, "log": tensorboard_logs}
 
     def test_step(self, batch, batch_idx):
-        breakpoint()
         generated_ids = self.model.generate(
             batch["source_ids"],
             attention_mask=batch["source_mask"],
@@ -187,7 +186,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # If output_dir not provided, a folder will be generated in pwd
-
     if args.output_dir is None:
         args.output_dir = os.path.join(
             "./results",
@@ -197,13 +195,14 @@ if __name__ == "__main__":
 
     model = BartSystem(args)
     trainer = generic_train(model, args)
+    breakpoint()
 
     # Optionally, predict on dev set and write to output_dir
     if args.do_predict:
         checkpoints = list(
             sorted(
                 glob.glob(
-                    os.path.join(args.output_dir, "checkpointcheckpoint_ckpt_epoch*.ckpt"),
+                    os.path.join(args.output_dir, "epoch=*.ckpt"),
                     recursive=True)))
         BartSystem.load_from_checkpoint(checkpoints[-1])
         trainer.test(model)
