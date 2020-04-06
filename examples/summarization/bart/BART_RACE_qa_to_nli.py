@@ -11,6 +11,7 @@ from pathlib import Path
 from run_bart_sum import BartSystem
 import sys
 sys.path.append('../../')
+sys.path.append('summarization/bart')
 
 
 def process_batch(batch, model, post_processor):
