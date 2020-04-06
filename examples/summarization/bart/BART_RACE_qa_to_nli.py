@@ -13,45 +13,6 @@ import sys
 sys.path.append('../../')
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--device', default=-1, type=int, help='-1 for cpu >=0 for gpu')
-    parser.add_argument('--data_folder', type=Path, required=True)
-
-
-device_ = 0
-
-if device_ > -1:
-    device = f'cuda:{device_}'
-else:
-    device = 'cpu'
-model = BartSystem.load_from_checkpoint(
-    '../../.models/bart2/epoch=1_v0.ckpt', map_location='cuda:0')
-model.model.to('cuda:0')
-
-# In[4]:
-
-tokenizer = BartTokenizer.from_pretrained('bart-large-cnn')
-
-# In[5]:
-
-spacy_nlp = spacy.load("en_core_web_sm")
-
-# In[6]:
-
-# read input data
-set_ = 'dev'
-input_file = Path(f'../../.data/RACE/set3/{set_}.json')
-
-# In[7]:
-
-with open(input_file) as f:
-    samples = json.load(f)
-
-# In[8]:
-
-
 def process_batch(batch, model, post_processor):
     inp = [ex['question'] + ' ' + ex['option'] for ex in batch]
     inp_tensor = tokenizer.batch_encode_plus(
@@ -78,53 +39,79 @@ def process_batch(batch, model, post_processor):
             post_processor(pred).sents)[0]).text.strip()
 
 
-# In[9]:
-
-batch_size = 128
-
-
 def batches(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
-# In[10]:
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--device', default=-1, type=int, help='-1 for cpu >=0 for gpu')
+    parser.add_argument('--data_folder', type=Path, required=True)
+    parser.add_argument('--model_checkpoint', type=Path, required=True)
+    parser.add_argument('--set', default='dev')
+    args = parser.parse_args()
 
-for batch in tqdm.tqdm(
-        batches(samples, batch_size), total=len(samples) // batch_size + 1):
-    process_batch(batch, model, spacy_nlp)
+    return args
 
-# In[11]:
+
+if __name__ == '__main__':
+    args = parse_args()
+    device_ = args.device
+
+    if device_ > -1:
+        device = f'cuda:{device_}'
+    else:
+        device = 'cpu'
+
+    model = BartSystem.load_from_checkpoint(
+        str(args.model_checkpoint.absolute()), map_location='cuda:0')
+    model.model.to(device)
+
+    tokenizer = BartTokenizer.from_pretrained('bart-large-cnn')
+
+    spacy_nlp = spacy.load("en_core_web_sm")
+
+    # read input data
+    set_ = args.set
+    input_file = (args.data_folder / set_).with_suffix('.json')
+
+    with open(input_file) as f:
+        samples = json.load(f)
+
+    batch_size = 128
+
+    for batch in tqdm.tqdm(
+            batches(samples, batch_size),
+            total=len(samples) // batch_size + 1):
+        process_batch(batch, model, spacy_nlp)
 
 # write output
-output_file = input_file.absolute().parent / (f'{set_}' + '_neural.json')
+    output_file = input_file.absolute().parent / (f'{set_}' + '_neural.json')
 
-if output_file.is_file():
-    for i in range(1, 100):
-        output_file = input_file.absolute().parent / (f'{set_}' + '_neural',
-                                                      str(i), '.json')
+    if output_file.is_file():
+        for i in range(1, 100):
+            output_file = input_file.absolute().parent / (
+                f'{set_}' + '_neural', str(i), '.json')
 
-        if output_file.is_file():
-            continue
+            if output_file.is_file():
+                continue
 
-print(f'Writing to {output_file}')
+    print(f'Writing to {output_file}')
 
-with open(output_file, 'w') as f:
-    json.dump(samples, f)
+    with open(output_file, 'w') as f:
+        json.dump(samples, f)
 
-# In[17]:
+    sublist = samples[10:20]
+    print('---Question+option')
 
-sublist = samples[10:20]
-print('---Question+option')
+    for s in sublist:
+        print(f"{s['question'] +' '+s['option']}")
+    print('---Rule based---')
 
-for s in sublist:
-    print(f"{s['question'] +' '+s['option']}")
-print('---Rule based---')
+    for s in sublist:
+        print(f"{s['hypothesis']}")
+    print('---Neural (BART) based---')
 
-for s in sublist:
-    print(f"{s['hypothesis']}")
-print('---Neural (BART) based---')
-
-for s in sublist:
-    print(f"{s['neural_hypothesis']}")
-
-# In[ ]:
+    for s in sublist:
+        print(f"{s['neural_hypothesis']}")
