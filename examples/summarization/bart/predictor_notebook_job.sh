@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=qa-to-nli
-#SBATCH -p 1080ti-short
+#SBATCH -p m40-short
 #SBATCH -N 1
 #SBATCH --cpus-per-task=3
 #SBATCH --gres=gpu:1
