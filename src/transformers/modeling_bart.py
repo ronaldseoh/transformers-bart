@@ -897,7 +897,11 @@ class BartForConditionalGeneration(PretrainedBartModel):
         lm_logits = F.linear(outputs[0], self.model.shared.weight)
         outputs = (lm_logits,) + outputs[1:]  # Add hidden states and attention if they are here
         if lm_labels is not None:
-            loss_fct = nn.CrossEntropyLoss()
+            # hack by dhruvesh
+            # assign high weight to pad to penalize hallucination
+            weight = torch.ones_like(lm_logits[0,0]) # shape of logits=(batch, seq, vocab)
+            weight[self.config.pad_token_id] = 10.0
+            loss_fct = nn.CrossEntropyLoss(weight=weight)
             # TODO(SS): do we need to ignore pad tokens in lm_labels?
             masked_lm_loss = loss_fct(lm_logits.view(-1, self.config.vocab_size), lm_labels.view(-1))
             outputs = (masked_lm_loss,) + outputs
