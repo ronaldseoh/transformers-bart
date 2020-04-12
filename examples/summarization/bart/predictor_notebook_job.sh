@@ -4,7 +4,7 @@
 #SBATCH -N 1
 #SBATCH --cpus-per-task=3
 #SBATCH --gres=gpu:1
-#SBATCH --output=bart-jupyter%j.out
+#SBATCH --output=logs/%j.out
 #SBATCH --mem=100GB
 
 #module load python3/3.7.3

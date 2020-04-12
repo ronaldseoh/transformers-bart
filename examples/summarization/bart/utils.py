@@ -27,13 +27,14 @@ class SummarizationDataset(Dataset):
             f.close()
 
         print("loading " + type_path + " target.")
-
         with open(os.path.join(data_dir, type_path + ".target"), "r") as f:
             for text in f.readlines():  # each text is a line and a summary
                 tokenized = tokenizer.batch_encode_plus([text],
-                                                        max_length=56,
+                                                        max_length=50,
                                                         pad_to_max_length=True,
                                                         return_tensors="pt")
+                # Let the model attend to pad tokens in the target.
+                tokenized['attention_mask'][tokenized['attention_mask']==0] =1
                 self.target.append(tokenized)
             f.close()
 
@@ -46,9 +47,11 @@ class SummarizationDataset(Dataset):
 
         src_mask = self.source[index]["attention_mask"].squeeze(
         )  # might need to squeeze
-
+        target_mask = self.target[index]["attention_mask"].squeeze(
+        )
         return {
             "source_ids": source_ids,
             "source_mask": src_mask,
-            "target_ids": target_ids
+            "target_ids": target_ids,
+            "target_mask": target_mask
         }

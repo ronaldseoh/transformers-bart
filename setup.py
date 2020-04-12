@@ -93,7 +93,7 @@ setup(
     license="Apache",
     url="https://github.com/huggingface/transformers",
     package_dir={"": "src"},
-    packages=find_packages("src"),
+    packages=find_packages("src", exclude=["*.examples", "*.examples.*", "examples.*", "examples"]),
     install_requires=[
         "numpy",
         "tokenizers == 0.5.2",
