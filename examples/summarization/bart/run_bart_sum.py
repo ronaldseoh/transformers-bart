@@ -42,7 +42,8 @@ class BartSystem(BaseTransformer):
         lm_labels = y[:, 1:].clone()
         # Uncomment following line to ignore pad tokens in target while calculating loss
         #lm_labels[y[:, 1:] == self.tokenizer.pad_token_id] = -100
-        target_mask = batch["target_mask"][:,:-1].contiguous() # drop one in mask as well
+        target_mask = batch["target_mask"][:, :-1].contiguous(
+        )  # drop one in mask as well
         outputs = self(
             input_ids=batch["source_ids"],
             attention_mask=batch["source_mask"],
@@ -58,7 +59,10 @@ class BartSystem(BaseTransformer):
     def training_step(self, batch, batch_idx):
         loss = self._step(batch)
 
-        tensorboard_logs = {"train_loss": loss, "learning_rate": self.lr_scheduler.get_last_lr()[-1]}
+        tensorboard_logs = {
+            "train_loss": loss,
+            "learning_rate": self.lr_scheduler.get_last_lr()[-1]
+        }
 
         return {"loss": loss, "log": tensorboard_logs}
 
@@ -126,7 +130,9 @@ class BartSystem(BaseTransformer):
             type_path="train",
             block_size=self.hparams.max_seq_length)
         dataloader = DataLoader(
-            train_dataset, batch_size=self.hparams.train_batch_size)
+            train_dataset,
+            batch_size=self.hparams.train_batch_size,
+            shuffle=True)
         t_total = (
             (len(dataloader.dataset)
              // (self.hparams.train_batch_size * max(1, self.hparams.n_gpu)))
@@ -189,6 +195,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # If output_dir not provided, a folder will be generated in pwd
+
     if args.output_dir is None:
         args.output_dir = os.path.join(
             "./results",
@@ -200,6 +207,7 @@ if __name__ == "__main__":
     trainer = generic_train(model, args)
 
     # Optionally, predict on dev set and write to output_dir
+
     if args.do_predict:
         checkpoints = list(
             sorted(
