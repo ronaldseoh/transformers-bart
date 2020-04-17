@@ -325,6 +325,7 @@ def add_generic_args(parser, root_dir):
         default=1,
         help="Number of updates steps to accumulate before performing a backward/update pass.",
     )
+    parser.add_argument('--early_stop_patience', default=0, type=int)
 
     parser.add_argument(
         "--server_ip", type=str, default="", help="For distant debugging.")
@@ -359,11 +360,11 @@ def generic_train(model, args):
         filepath=os.path.join(args.output_dir,'{epoch}'),
         monitor="val_loss",
         mode="min", verbose=True,
-        save_top_k=2)
+        save_top_k=1)
     early_stop_callback = EarlyStopping(
     monitor='val_loss',
     min_delta=0.00,
-    patience=0,
+    patience=args.early_stop_patience,
     verbose=True,
     mode='min'
     )
