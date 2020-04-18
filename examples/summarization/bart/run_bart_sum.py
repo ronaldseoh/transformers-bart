@@ -6,6 +6,7 @@ import time
 
 import torch
 from torch.utils.data import DataLoader
+from pathlib import Path
 
 from transformer_base import BaseTransformer, add_generic_args, generic_train, get_linear_schedule_with_warmup
 from utils import SummarizationDataset
@@ -184,6 +185,12 @@ class BartSystem(BaseTransformer):
             required=True,
             help="The input data dir. Should contain the dataset files for the CNN/DM summarization task.",
         )
+        parser.add_argument(
+            '--model_state',
+            type=Path,
+            help="Specify a .ckpt file to start training from that state."
+            " Note: This not designed for resuming training from checkpoint but for doing pretraining/curriculum learning"
+        )
 
         return parser
 
@@ -203,8 +210,17 @@ if __name__ == "__main__":
         )
         os.makedirs(args.output_dir)
 
-    model = BartSystem(args)
-    trainer = generic_train(model, args)
+    # load state if specified, else create fresh
+
+    if args.do_train:
+        if args.model_state is None:
+            logger.info("Creating a fresh model")
+            model = BartSystem(args)
+        else:
+            logger.info(f"Loading from {args.model_state}")
+            model = BartSystem.load_from_checkpoint(args.model_state)
+
+        trainer = generic_train(model, args)
 
     # Optionally, predict on dev set and write to output_dir
 
@@ -214,5 +230,6 @@ if __name__ == "__main__":
                 glob.glob(
                     os.path.join(args.output_dir, "epoch=*.ckpt"),
                     recursive=True)))
-        BartSystem.load_from_checkpoint(checkpoints[-1])
+        logger.info(f"Predicting using {checkpoints[-1]}")
+        model = BartSystem.load_from_checkpoint(checkpoints[-1])
         trainer.test(model)
