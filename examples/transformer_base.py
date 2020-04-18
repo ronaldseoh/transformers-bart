@@ -335,7 +335,7 @@ def add_generic_args(parser, root_dir):
         "--seed", type=int, default=42, help="random seed for initialization")
 
 
-def generic_train(model, args):
+def setup_trainer(args):
     # init model
     set_seed(args)
 
@@ -398,7 +398,5 @@ def generic_train(model, args):
 
     trainer = pl.Trainer(**train_params)
 
-    if args.do_train:
-        trainer.fit(model)
-
+    
     return trainer

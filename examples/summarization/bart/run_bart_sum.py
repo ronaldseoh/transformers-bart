@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 from pathlib import Path
 
-from transformer_base import BaseTransformer, add_generic_args, generic_train, get_linear_schedule_with_warmup
+from transformer_base import BaseTransformer, add_generic_args, setup_trainer, get_linear_schedule_with_warmup
 from utils import SummarizationDataset
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,8 @@ class BartSystem(BaseTransformer):
             batch["source_ids"],
             attention_mask=batch["source_mask"],
             num_beams=1,
-            max_length=80,
+            do_sample=False,
+            max_length=50,
             repetition_penalty=2.5,
             length_penalty=1.0,
             early_stopping=True,
@@ -220,7 +221,11 @@ if __name__ == "__main__":
             logger.info(f"Loading from {args.model_state}")
             model = BartSystem.load_from_checkpoint(args.model_state)
 
-        trainer = generic_train(model, args)
+        trainer = setup_trainer(args)
+        trainer.fit(model)
+    else:
+        trainer = None
+
 
     # Optionally, predict on dev set and write to output_dir
 
@@ -232,4 +237,6 @@ if __name__ == "__main__":
                     recursive=True)))
         logger.info(f"Predicting using {checkpoints[-1]}")
         model = BartSystem.load_from_checkpoint(checkpoints[-1])
+        if trainer is None:
+            trainer = setup_trainer(args)
         trainer.test(model)
