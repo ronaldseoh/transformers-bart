@@ -218,14 +218,19 @@ if __name__ == "__main__":
             logger.info("Creating a fresh model")
             model = BartSystem(args)
         else:
-            logger.info(f"Loading from {args.model_state}")
-            model = BartSystem.load_from_checkpoint(args.model_state)
+            logger.info(
+                f"Loading from {args.model_state}. Note: old config params will be ignored."
+            )
+            model = BartSystem(args)
+            checkpoint = torch.load(
+                args.model_state, map_location=lambda storage, loc: storage)
+            model.load_state_dict(
+                checkpoint['state_dict'])  # just load the state dict
 
         trainer = setup_trainer(args)
         trainer.fit(model)
     else:
         trainer = None
-
 
     # Optionally, predict on dev set and write to output_dir
 
@@ -237,6 +242,7 @@ if __name__ == "__main__":
                     recursive=True)))
         logger.info(f"Predicting using {checkpoints[-1]}")
         model = BartSystem.load_from_checkpoint(checkpoints[-1])
+
         if trainer is None:
             trainer = setup_trainer(args)
         trainer.test(model)

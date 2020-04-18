@@ -29,8 +29,8 @@ if os.environ.get("LIGHTNING_DEBUG"):
 else:
     LEVEL = logging.INFO
 
-logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-                    level=LEVEL)
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', level=LEVEL)
 
 ALL_MODELS = tuple(ALL_PRETRAINED_MODEL_ARCHIVE_MAP)
 MODEL_CLASSES = tuple(m.model_type for m in MODEL_MAPPING)
@@ -357,17 +357,17 @@ def setup_trainer(args):
                 args.output_dir))
 
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        filepath=os.path.join(args.output_dir,'{epoch}'),
+        filepath=os.path.join(args.output_dir, '{epoch}'),
         monitor="val_loss",
-        mode="min", verbose=True,
+        mode="min",
+        verbose=True,
         save_top_k=1)
     early_stop_callback = EarlyStopping(
-    monitor='val_loss',
-    min_delta=0.00,
-    patience=args.early_stop_patience,
-    verbose=True,
-    mode='min'
-    )
+        monitor='val_loss',
+        min_delta=0.00,
+        patience=args.early_stop_patience,
+        verbose=True,
+        mode='min')
     # wandb logger
     wandb_logger = WandbLogger(project="bart-qa-to-nli")
     train_params = dict(
@@ -398,5 +398,4 @@ def setup_trainer(args):
 
     trainer = pl.Trainer(**train_params)
 
-    
     return trainer
