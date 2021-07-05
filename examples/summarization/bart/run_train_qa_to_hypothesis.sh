@@ -1,6 +1,6 @@
 # Add parent directory to python path to access transformer_base.py
 
-export PYTHONPATH="../../":"${PYTHONPATH}"
+export PYTHONPATH="../../../src":"../../":"${PYTHONPATH}"
 
 python run_bart_sum.py \
 --data_dir=../../.data/qa_to_hypothesis_test \
