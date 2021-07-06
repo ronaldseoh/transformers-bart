@@ -362,19 +362,13 @@ def setup_trainer(args):
         mode="min",
         verbose=True,
         save_top_k=1)
-    early_stop_callback = EarlyStopping(
-        monitor='val_loss',
-        min_delta=0.00,
-        patience=args.early_stop_patience,
-        verbose=True,
-        mode='min')
+
     # wandb logger
     wandb_logger = WandbLogger(project="bart-qa-to-nli")
     train_params = dict(
         accumulate_grad_batches=args.gradient_accumulation_steps,
         gpus=args.n_gpu,
         max_epochs=args.num_train_epochs,
-        early_stop_callback=early_stop_callback,
         gradient_clip_val=args.max_grad_norm,
         checkpoint_callback=checkpoint_callback,
         logger=wandb_logger,
