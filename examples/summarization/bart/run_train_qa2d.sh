@@ -16,7 +16,7 @@ python run_bart_sum.py \
 --train_batch_size=24 \
 --eval_batch_size=24 \
 --output_dir=$OUTPUT_DIR \
---model_state bart_gsc/epoch=1.ckpt \
+--model_state bart_gsc/epoch=2.ckpt \
 --do_train \
 --do_predict \
 --max_seq_length 50 \
